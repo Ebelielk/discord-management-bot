@@ -33,4 +33,4 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 # 3. Configurer les variables d'environnement
-# Créez un fichier .env basé sur .env.example
+# Créez un fichier .env
