@@ -1,0 +1,14 @@
+# Secrets
+.env
+
+# Environnement virtuel
+venv/
+__pycache__/
+*.py[cod]
+
+# Données locales
+database.json
+sessions/
+
+# OS
+.DS_Store
