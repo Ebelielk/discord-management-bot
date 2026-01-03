@@ -28,9 +28,24 @@ git clone [https://github.com/Ebelielk/discord-management-bot.git](https://githu
 cd discord-management-bot
 
 # 2. Installer l'environnement
-python3 -m venv venv
-source venv/bin/activate
+python -m venv venv
+# Sur Windows :
+venv\Scripts\activate
+# Sur Linux/Mac :
+# source venv/bin/activate
 pip install -r requirements.txt
 
 # 3. Configurer les variables d'environnement
-# Créez un fichier .env
+# Créez un fichier .env dans le répertoire racine du projet
+# et ajoutez votre token Discord :
+
+DISCORD_TOKEN=votre_token_discord_ici
+
+# Pour obtenir un token Discord :
+# 1. Allez sur https://discord.com/developers/applications
+# 2. Créez une nouvelle application ou sélectionnez-en une existante
+# 3. Dans l'onglet "Bot", cliquez sur "Add Bot"
+# 4. Copiez le token sous "Token" et collez-le dans le fichier .env
+
+# 4. Lancer le bot
+python main.py
