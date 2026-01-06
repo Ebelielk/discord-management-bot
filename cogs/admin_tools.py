@@ -3,6 +3,9 @@ import discord
 from discord.ext import commands
 from discord import app_commands, Guild
 from config import GUILD_ID, ANNOUNCEMENT_COLOR
+import investpy
+from datetime import datetime, timedelta
+import pandas as pd
 
 class AdminTools(commands.Cog):
     """
@@ -69,6 +72,85 @@ class AdminTools(commands.Cog):
         except Exception as e:
             await interaction.response.send_message(
                 f"❌ Une erreur s'est produite lors de l'envoi de l'annonce : {e}", 
+                ephemeral=True
+            )
+    
+    @app_commands.command(name="calendrier_economique", description="Envoie le calendrier économique hebdomadaire.")
+    @app_commands.describe(
+        salon="Le salon où envoyer le calendrier (par défaut: salon actuel)."
+    )
+    async def calendrier_economique_command(self, interaction: discord.Interaction, 
+                                           salon: discord.TextChannel = None):
+        
+        target_channel = salon if salon else interaction.channel
+        
+        await interaction.response.defer()  # Pour les opérations longues
+        
+        try:
+            # Obtenir la date actuelle et la date dans 7 jours
+            today = datetime.now()
+            next_week = today + timedelta(days=7)
+            
+            # Récupérer le calendrier économique
+            calendar = investpy.economic_calendar(
+                from_date=today.strftime('%d/%m/%Y'),
+                to_date=next_week.strftime('%d/%m/%Y')
+            )
+            
+            if calendar.empty:
+                embed = discord.Embed(
+                    title="📅 Calendrier Économique Hebdomadaire",
+                    description="Aucun événement économique prévu cette semaine.",
+                    color=ANNOUNCEMENT_COLOR,
+                    timestamp=discord.utils.utcnow()
+                )
+            else:
+                # Créer l'embed avec les événements
+                embed = discord.Embed(
+                    title="📅 Calendrier Économique Hebdomadaire",
+                    description=f"Événements du {today.strftime('%d/%m/%Y')} au {next_week.strftime('%d/%m/%Y')}",
+                    color=ANNOUNCEMENT_COLOR,
+                    timestamp=discord.utils.utcnow()
+                )
+                
+                # Grouper par date
+                calendar['date'] = calendar['date'].dt.strftime('%d/%m/%Y')
+                grouped = calendar.groupby('date')
+                
+                for date, events in grouped:
+                    event_list = []
+                    for _, event in events.iterrows():
+                        time = event['time'] if pd.notna(event['time']) else "N/A"
+                        currency = event['currency'] if pd.notna(event['currency']) else ""
+                        event_name = event['event']
+                        forecast = event['forecast'] if pd.notna(event['forecast']) else ""
+                        previous = event['previous'] if pd.notna(event['previous']) else ""
+                        
+                        event_str = f"🕒 {time} - {currency} {event_name}"
+                        if forecast:
+                            event_str += f" (Prévision: {forecast})"
+                        if previous:
+                            event_str += f" (Précédent: {previous})"
+                        
+                        event_list.append(event_str)
+                    
+                    embed.add_field(
+                        name=f"📆 {date}",
+                        value="\n".join(event_list[:5]),  # Limiter à 5 événements par jour
+                        inline=False
+                    )
+            
+            embed.set_footer(text=f"Demandé par {interaction.user.display_name}")
+            
+            await target_channel.send(embed=embed)
+            await interaction.followup.send(
+                f"✅ Calendrier économique envoyé dans {target_channel.mention} !", 
+                ephemeral=True
+            )
+            
+        except Exception as e:
+            await interaction.followup.send(
+                f"❌ Erreur lors de la récupération du calendrier économique : {e}", 
                 ephemeral=True
             )
 
